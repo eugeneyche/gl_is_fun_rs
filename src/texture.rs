@@ -1,15 +1,6 @@
 use gl;
 use gl::types::*;
 
-pub struct Texture {
-    pub gl_id: GLuint,
-}
-
-#[derive(Debug)]
-pub struct TextureError {
-    pub message: String,
-}
-
 pub enum TextureFormat {
     R,
     Rgb,
@@ -17,8 +8,41 @@ pub enum TextureFormat {
 }
 
 pub enum TextureFilter {
-    Nearest,
     Linear,
+    Nearest,
+}
+
+#[derive(Debug)]
+pub struct TextureError {
+    pub message: String,
+}
+
+pub struct Texture {
+    pub gl_id: GLuint,
+}
+
+pub struct BoundTexture<'a> {
+    pub unit_index: u32,
+    texture: &'a mut Texture,
+}
+
+impl TextureFormat {
+    pub fn to_gl_format(&self) -> GLenum {
+        match *self {
+            TextureFormat::R => gl::RED,
+            TextureFormat::Rgb => gl::RGB,
+            TextureFormat::Rgba => gl::RGBA,
+        }
+    }
+}
+
+impl TextureFilter {
+    pub fn to_gl_filter(&self) -> GLenum {
+        match *self {
+            TextureFilter::Linear => gl::LINEAR,
+            TextureFilter::Nearest => gl::NEAREST,
+        }
+    }
 }
 
 impl Texture {
@@ -34,41 +58,48 @@ impl Texture {
             gl_id
         };
         let mut texture = Texture { gl_id: gl_id };
-        texture.set_filters(TextureFilter::Nearest, TextureFilter::Nearest);
+        texture.bind(0).set_filters(TextureFilter::Nearest, TextureFilter::Nearest);
         Ok(texture)
     }
 
-    pub fn set_filters(&mut self, min: TextureFilter, mag: TextureFilter) {
-        self.bind(0);
+    pub fn bind<'a>(&'a mut self, unit_index: u32) -> BoundTexture<'a> {
+        BoundTexture::new(unit_index, self)
+    }
+}
+
+impl<'a> BoundTexture<'a> {
+    pub fn new(unit_index: u32, texture: &'a mut Texture) -> Self {
         unsafe {
-            let gl_min = match min {
-                TextureFilter::Nearest => gl::NEAREST,
-                TextureFilter::Linear => gl::LINEAR,
-            };
-            let gl_mag = match mag {
-                TextureFilter::Nearest => gl::NEAREST,
-                TextureFilter::Linear => gl::LINEAR,
-            };
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl_min as _);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl_mag as _);
+            gl::ActiveTexture(gl::TEXTURE0 + unit_index);
+            gl::BindTexture(gl::TEXTURE_2D, texture.gl_id);
+        }
+        BoundTexture {
+            unit_index: unit_index,
+            texture: texture,
         }
     }
 
-    pub fn bind(&mut self, index: u32) {
+    pub fn set_filters(&mut self, min: TextureFilter, mag: TextureFilter) {
         unsafe {
-            gl::ActiveTexture(gl::TEXTURE0 + index);
-            gl::BindTexture(gl::TEXTURE_2D, self.gl_id);
+            gl::ActiveTexture(gl::TEXTURE0 + self.unit_index);
+            gl::TexParameteri(
+                gl::TEXTURE_2D,
+                gl::TEXTURE_MIN_FILTER,
+                min.to_gl_filter() as _,
+            );
+            gl::TexParameteri(
+                gl::TEXTURE_2D,
+                gl::TEXTURE_MIN_FILTER,
+                mag.to_gl_filter() as _,
+            );
         }
     }
 
     pub fn upload_image_2d(&mut self, format: TextureFormat, width: usize, height: usize, pixels: &[u8]) {
-        let gl_format = match format {
-            TextureFormat::R => gl::RED,
-            TextureFormat::Rgb => gl::RGB,
-            TextureFormat::Rgba => gl::RGBA,
-        };
-        self.bind(0);
         unsafe {
+            gl::ActiveTexture(gl::TEXTURE0 + self.unit_index);
+            let gl_format = format.to_gl_format();
+            gl::ActiveTexture(gl::TEXTURE0 + self.unit_index);
             gl::TexImage2D(
                 gl::TEXTURE_2D,
                 0,
@@ -78,7 +109,7 @@ impl Texture {
                 0,
                 gl_format,
                 gl::UNSIGNED_BYTE,
-                pixels.as_ptr() as *const _
+                pixels.as_ptr() as *const _,
             );
         }
     }

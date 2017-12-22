@@ -1,12 +1,7 @@
 use piston_image;
 use std::path::Path;
 
-pub struct Image {
-    pub format: ImageFormat,
-    pub width: usize,
-    pub height: usize,
-    pub pixels: Vec<u8>,
-}
+use texture::TextureFormat;
 
 pub enum ImageFormat {
     R,
@@ -18,6 +13,25 @@ pub enum ImageFormat {
 #[derive(Debug)]
 pub struct ImageError {
     pub message: String
+}
+
+pub struct Image {
+    pub format: ImageFormat,
+    pub width: usize,
+    pub height: usize,
+    pub pixels: Vec<u8>,
+}
+
+impl ImageFormat {
+    pub fn to_texture_format(&self) -> Option<TextureFormat> {
+        match *self {
+            ImageFormat::R => Some(TextureFormat::R),
+            ImageFormat::Rgb => Some(TextureFormat::Rgb),
+            ImageFormat::Rgba => Some(TextureFormat::Rgba),
+            _ => None,
+        }
+
+    }
 }
 
 impl Image {

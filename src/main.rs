@@ -33,46 +33,56 @@ fn main() {
     }
     let mut running = true;
     let mut program = shader_program::ShaderProgram::link(&[
-        &shader::Shader::from_file(shader::ShaderTy::Vertex, Path::new("res/shaders/basic.vert")).unwrap(),
-        &shader::Shader::from_file(shader::ShaderTy::Fragment, Path::new("res/shaders/basic.frag")).unwrap(),
+        &shader::Shader::from_file(
+            shader::ShaderTy::Vertex,
+            Path::new("res/shaders/basic.vert")
+        ).unwrap(),
+        &shader::Shader::from_file(
+            shader::ShaderTy::Fragment,
+            Path::new("res/shaders/basic.frag")
+        ).unwrap(),
     ]).unwrap();
-    let tex_loc = program.get_uniform_location("tex").unwrap_or(-1 as _);
+    let tex_loc = program.get_uniform_location("tex");
     let img = image::Image::from_file(Path::new("res/images/squid.png")).unwrap();
-    let tex_format = match img.format {
-        image::ImageFormat::R => texture::TextureFormat::R,
-        image::ImageFormat::Rgb => texture::TextureFormat::Rgb,
-        image::ImageFormat::Rgba => texture::TextureFormat::Rgba,
-        _ => panic!("Unsupported image format"),
-    };
-    let mut tex = texture::Texture::new().unwrap();
-    tex.upload_image_2d(
-        tex_format,
-        img.width,
-        img.height,
-        &img.pixels,
-    );
-    tex.bind(0);
-    let mut triangle = geometry::Geometry::new().unwrap();
-    triangle.set_vertices(
-        &[
-            [-1.0f32, 1.0, 0.0, 1.0],
-            [-1.0f32,-1.0, 0.0, 0.0],
-            [ 1.0f32, 1.0, 1.0, 1.0],
-            [ 1.0f32,-1.0, 1.0, 0.0],
-        ],
-        &[
-            geometry::VertexAttrib {
-                ty: geometry::VertexAttribTy::FloatVec2,
-                offset: 0,
-                normalized: false,
-            },
-            geometry::VertexAttrib {
-                ty: geometry::VertexAttribTy::FloatVec2,
-                offset: 4 * 2,
-                normalized: false,
-            },
-        ],
-    );
+    let mut squid_tex = texture::Texture::new().unwrap();
+    squid_tex
+        .bind(0)
+        .upload_image_2d(
+            img.format.to_texture_format().unwrap(),
+            img.width,
+            img.height,
+            &img.pixels,
+        );
+    let mut vertex_array = vertex_array::VertexArray::new().unwrap();
+    let mut vertex_buffer = buffer::VertexBuffer::new().unwrap();
+    vertex_buffer
+        .bind()
+        .upload(
+            &[
+                [-1f32,  1., 0., 1.],
+                [ 1f32,  1., 1., 1.],
+                [-1f32, -1., 0., 0.],
+                [ 1f32, -1., 1., 0.],
+            ],
+            buffer::BufferUsageHint::DynamicDraw,
+        );
+    vertex_array
+        .bind(vertex_buffer.bind())
+        .set_vertex_attribs(
+            4 * 4,
+            &[
+                vertex_array::VertexAttrib {
+                    ty: vertex_array::VertexAttribTy::FloatVec2,
+                    offset: 0,
+                    normalized: false,
+                },
+                vertex_array::VertexAttrib {
+                    ty: vertex_array::VertexAttribTy::FloatVec2,
+                    offset: 2 * 4,
+                    normalized: false,
+                },
+            ],
+        );
     while running {
         events_loop.poll_events(|event| {
             match event {
@@ -84,11 +94,12 @@ fn main() {
             }
         });
         unsafe { gl::Clear(gl::COLOR_BUFFER_BIT); }
-        program.activate();
-        unsafe {
-            gl::Uniform1i(tex_loc as _, 0);
-        }
-        triangle.draw(geometry::DrawTy::TriangleStrip);
+        let mut bound_squid_tex = squid_tex.bind(0);
+        let mut active_program = program.activate();
+        active_program.uniform_integer(tex_loc, bound_squid_tex.unit_index as _);
+        vertex_array
+            .bind(vertex_buffer.bind())
+            .draw_arrays(vertex_array::DrawTy::TriangleStrip, 0, 4);
         gl_window.swap_buffers();
     }
 }

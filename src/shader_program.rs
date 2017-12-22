@@ -5,14 +5,20 @@ use std::ffi::CString;
 
 use shader::Shader;
 
-pub struct ShaderProgram {
-    pub gl_id: GLuint,
-}
-
 #[derive(Debug)]
 pub struct ShaderProgramError {
     pub message: String,
     pub info_log: Option<String>,
+}
+
+pub struct ShaderProgram {
+    pub gl_id: GLuint,
+}
+
+pub type UniformLocation = Option<u32>;
+
+pub struct ActivatedShaderProgram<'a> {
+    program: &'a mut ShaderProgram,
 }
 
 impl ShaderProgram {
@@ -56,7 +62,7 @@ impl ShaderProgram {
         })
     }
 
-    pub fn get_uniform_location(&self, uniform: &str) -> Option<u32> {
+    pub fn get_uniform_location(&self, uniform: &str) -> UniformLocation {
         unsafe {
             if let Ok(c_name) = CString::new(uniform) {
                 let gl_location = gl::GetUniformLocation(self.gl_id, c_name.as_ptr() as *const _);
@@ -71,10 +77,8 @@ impl ShaderProgram {
         }
     }
 
-    pub fn activate(&mut self) {
-        unsafe {
-            gl::UseProgram(self.gl_id);
-        }
+    pub fn activate<'a>(&'a mut self) -> ActivatedShaderProgram<'a> {
+        ActivatedShaderProgram::new(self)
     }
 }
 
@@ -84,5 +88,22 @@ impl Drop for ShaderProgram {
             gl::DeleteProgram(self.gl_id);
         }
         self.gl_id = 0;
+    }
+}
+
+impl<'a> ActivatedShaderProgram<'a> {
+    fn new(program: &'a mut ShaderProgram) -> Self {
+        unsafe {
+            gl::UseProgram(program.gl_id);
+        }
+        ActivatedShaderProgram {
+            program: program,
+        }
+    }
+
+    pub fn uniform_integer(&mut self, location: UniformLocation, value: i32) {
+        if let Some(gl_location) = location {
+            unsafe { gl::Uniform1i(gl_location as _, value); }
+        }
     }
 }

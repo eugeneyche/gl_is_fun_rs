@@ -11,15 +11,25 @@ pub enum ShaderTy {
     Vertex,
 }
 
+#[derive(Debug)]
+pub struct ShaderError {
+    pub message: String,
+    pub info_log: Option<String>,
+}
+
 pub struct Shader {
     pub ty: ShaderTy,
     pub gl_id: GLuint,
 }
 
-#[derive(Debug)]
-pub struct ShaderError {
-    pub message: String,
-    pub info_log: Option<String>,
+impl ShaderTy {
+    pub fn to_gl_shader_ty(&self) -> GLenum {
+        match *self {
+            ShaderTy::Fragment => gl::FRAGMENT_SHADER,
+            ShaderTy::Geometry => gl::GEOMETRY_SHADER,
+            ShaderTy::Vertex => gl::VERTEX_SHADER,
+        }
+    }
 }
 
 impl Shader {
@@ -42,12 +52,7 @@ impl Shader {
 
     pub fn from_source(ty: ShaderTy, source: &str) -> Result<Self, ShaderError> {
         let gl_id = unsafe {
-            let gl_ty = match ty {
-                ShaderTy::Fragment => gl::FRAGMENT_SHADER,
-                ShaderTy::Geometry => gl::GEOMETRY_SHADER,
-                ShaderTy::Vertex => gl::VERTEX_SHADER,
-            };
-            let gl_id = gl::CreateShader(gl_ty);
+            let gl_id = gl::CreateShader(ty.to_gl_shader_ty());
             if gl_id == 0 {
                 return Err(ShaderError {
                     message: "Failed to create GPU shader".into(),

@@ -1,6 +1,8 @@
 use gl;
 use std;
 
+/*
+
 use buffer::{Buffer, BufferUsageHint};
 use vertex_array::VertexArray;
 
@@ -141,3 +143,4 @@ impl Geometry {
         }
     }
 }
+*/
