@@ -1,0 +1,9 @@
+[package]
+name = "gl_fun"
+version = "0.1.0"
+authors = ["eyche"]
+
+[dependencies]
+gl = "*"
+glutin = "*"
+image = "*"
