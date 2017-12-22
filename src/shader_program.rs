@@ -106,4 +106,70 @@ impl<'a> ActivatedShaderProgram<'a> {
             unsafe { gl::Uniform1i(gl_location as _, value); }
         }
     }
+
+    pub fn uniform_float(&mut self, location: UniformLocation, value: f32) {
+        if let Some(gl_location) = location {
+            unsafe { gl::Uniform1f(gl_location as _, value); }
+        }
+    }
+
+    pub fn uniform_float_vec2(&mut self, location: UniformLocation, value: &[f32; 2]) {
+        if let Some(gl_location) = location {
+            unsafe { gl::Uniform2fv(gl_location as _, 1, value.as_ptr() as *const _); }
+        }
+    }
+
+    pub fn uniform_float_vec3(&mut self, location: UniformLocation, value: &[f32; 3]) {
+        if let Some(gl_location) = location {
+            unsafe { gl::Uniform3fv(gl_location as _, 1, value.as_ptr() as *const _); }
+        }
+    }
+
+    pub fn uniform_float_vec4(&mut self, location: UniformLocation, value: &[f32; 4]) {
+        if let Some(gl_location) = location {
+            unsafe { gl::Uniform4fv(gl_location as _, 1, value.as_ptr() as *const _); }
+        }
+    }
+
+    pub fn uniform_float_array(&mut self, location: UniformLocation, value: &[f32]) {
+        if let Some(gl_location) = location {
+            unsafe { gl::Uniform1fv(gl_location as _, value.len() as _, value.as_ptr() as *const _); }
+        }
+    }
+
+    pub fn uniform_float_vec2_array(&mut self, location: UniformLocation, value: &[[f32; 2]]) {
+        if let Some(gl_location) = location {
+            unsafe { gl::Uniform2fv(gl_location as _, value.len() as _, value.as_ptr() as *const _); }
+        }
+    }
+
+    pub fn uniform_float_vec3_array(&mut self, location: UniformLocation, value: &[[f32; 3]]) {
+        if let Some(gl_location) = location {
+            unsafe { gl::Uniform3fv(gl_location as _, value.len() as _, value.as_ptr() as *const _); }
+        }
+    }
+
+    pub fn uniform_float_vec4_array(&mut self, location: UniformLocation, value: &[[f32; 4]]) {
+        if let Some(gl_location) = location {
+            unsafe { gl::Uniform4fv(gl_location as _, value.len() as _, value.as_ptr() as *const _); }
+        }
+    }
+
+    pub fn uniform_float_mat2(&mut self, location: UniformLocation, value: &[f32; 4]) {
+        if let Some(gl_location) = location {
+            unsafe { gl::UniformMatrix2fv(gl_location as _, 1, gl::FALSE, value.as_ptr() as *const _); }
+        }
+    }
+
+    pub fn uniform_float_mat3(&mut self, location: UniformLocation, value: &[f32; 9]) {
+        if let Some(gl_location) = location {
+            unsafe { gl::UniformMatrix3fv(gl_location as _, 1, gl::FALSE, value.as_ptr() as *const _); }
+        }
+    }
+
+    pub fn uniform_float_mat4(&mut self, location: UniformLocation, value: &[f32; 16]) {
+        if let Some(gl_location) = location {
+            unsafe { gl::UniformMatrix4fv(gl_location as _, 1, gl::FALSE, value.as_ptr() as *const _); }
+        }
+    }
 }

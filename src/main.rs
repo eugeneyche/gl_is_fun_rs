@@ -15,8 +15,8 @@ use std::path::Path;
 fn main() {
     let mut events_loop = glutin::EventsLoop::new();
     let window = glutin::WindowBuilder::new()
-        .with_title("GL Fun!")
-        .with_dimensions(1024, 768);
+        .with_title("Open GL is fun!")
+        .with_dimensions(256, 328);
     let context = glutin::ContextBuilder::new()
         .with_gl(
             glutin::GlRequest::Specific(
