@@ -3,7 +3,6 @@ extern crate glutin;
 extern crate image as piston_image;
 
 mod buffer;
-mod geometry;
 mod image;
 mod shader;
 mod shader_program;
